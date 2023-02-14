@@ -3,7 +3,7 @@
     <div>
       <router-view />
     </div>
-    <div>
+    <div v-if="showTabbar">
       <van-tabbar v-model="active">
         <van-tabbar-item icon="home-o" replace to="/">练习</van-tabbar-item>
         <van-tabbar-item icon="user-o" replace to="/my">我的</van-tabbar-item>
@@ -13,16 +13,25 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, effect } from "vue";
+import { useRoute } from "vue-router";
 
 export default {
   name: "App",
   components: {},
   setup() {
     const active = ref(0);
+    const showTabbar = ref(true);
+    const route = useRoute();
+
+    effect(() => {
+      active.value = route.path === "/" ? 0 : 1;
+      showTabbar.value = ["/", "/my"].includes(route.path);
+    });
 
     return {
       active,
+      showTabbar,
     };
   },
 };

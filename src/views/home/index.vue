@@ -11,10 +11,13 @@
               fill="#eee"
               :rate="rate"
               :color="gradientColor"
-              text="顺序练习(0/100)"
+              text="练习进度(0/100)"
             />
           </div>
           <div class="home_root_btn_group">
+            <div>
+              <van-button plain block type="success">顺序练习</van-button>
+            </div>
             <div>
               <van-button plain block type="primary">随机练习</van-button>
             </div>
