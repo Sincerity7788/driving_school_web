@@ -11,7 +11,7 @@
               fill="#eee"
               :rate="rate"
               :color="gradientColor"
-              text="练习进度(0/100)"
+              :text="`练习进度(${userInfo.quantity}/${questionTotal})`"
             />
           </div>
           <div class="home_root_btn_group">
@@ -39,14 +39,22 @@
 import { userStore } from "@/store/userStore.js";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
+import { getQuestionTotalAPI } from "@/api/home";
 export default {
   name: "HomeView",
   setup() {
+    // tab切换
     const active = ref(0);
+    // 用户数据
     const user = userStore();
-    const { userName } = storeToRefs(user);
+    const { userName, userInfo } = storeToRefs(user);
+    // 环形图数据
     const currentRate = ref(0);
     const rate = ref(0);
+
+    // 总数
+    const questionTotal = ref(0);
+
     const gradientColor = {
       "0%": "#3fecff",
       "100%": "#6149f6",
@@ -55,6 +63,16 @@ export default {
     // 切换tab
     const onClickTab = () => {};
 
+    // 获取总数
+    const getTotal = () => {
+      getQuestionTotalAPI()
+        .then((res) => {
+          questionTotal.value = res.data ?? 0;
+          console.log(res);
+        })
+        .catch((err) => console.log(err));
+    };
+
     return {
       userName,
       active,
@@ -62,7 +80,13 @@ export default {
       currentRate,
       gradientColor,
       rate,
+      getTotal,
+      questionTotal,
+      userInfo,
     };
+  },
+  created() {
+    this.getTotal();
   },
 };
 </script>

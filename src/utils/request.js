@@ -3,7 +3,7 @@ import { showFailToast } from "vant";
 import "vant/es/toast/style";
 
 const request = axios.create({
-  baseURL: "http://localhost:6789",
+  baseURL: process.env.VUE_APP_API,
   timeout: 5000,
 });
 
@@ -21,7 +21,7 @@ request.interceptors.response.use(
     // 校验toke
 
     // 校验非200的
-    if (data.code !== "200") {
+    if (data.code !== "00") {
       showFailToast(data.message);
       return Promise.reject(false);
     }
