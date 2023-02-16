@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 import { getUserInfo, setToken, setUserInfo } from "@/utils/auth";
 
 let userInfo = JSON.parse(getUserInfo() || "{}");
-
 export const userStore = defineStore("user", {
   state: () => {
     return {

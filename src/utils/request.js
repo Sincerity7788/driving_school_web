@@ -21,7 +21,7 @@ request.interceptors.response.use(
     // 校验toke
 
     // 校验非200的
-    if (data.code !== "00") {
+    if (data.code !== "200") {
       showFailToast(data.message);
       return Promise.reject(false);
     }

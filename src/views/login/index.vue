@@ -62,6 +62,8 @@ export default {
     // 是否登陆
     let isRegister = ref(false);
 
+    const user = userStore();
+
     const searchParams = reactive({
       userName: "",
       passWord: "",
@@ -86,9 +88,9 @@ export default {
           })
           .catch(() => {});
       } else {
+        console.log(1);
         loginAPI(searchParams)
           .then((res) => {
-            const user = userStore();
             user.login(res.data);
             showSuccessToast("登陆成功");
             router.push("/");

@@ -11,21 +11,29 @@
               fill="#eee"
               :rate="rate"
               :color="gradientColor"
-              :text="`练习进度(${userInfo.quantity}/${questionTotal})`"
+              :text="`练习进度(${userInfo.quantity || 0}/${questionTotal})`"
             />
           </div>
           <div class="home_root_btn_group">
             <div>
-              <van-button plain block type="success">顺序练习</van-button>
+              <van-button plain block type="success" @click="toTestPage(1)">
+                顺序练习
+              </van-button>
             </div>
             <div>
-              <van-button plain block type="primary">随机练习</van-button>
+              <van-button plain block type="primary" @click="toTestPage(2)">
+                随机练习
+              </van-button>
             </div>
             <div>
-              <van-button plain block type="warning">错题练习</van-button>
+              <van-button plain block type="warning" @click="toTestPage(3)">
+                错题练习
+              </van-button>
             </div>
             <div>
-              <van-button block type="success">模拟考试</van-button>
+              <van-button block type="success" @click="toTestPage(4)">
+                模拟考试
+              </van-button>
             </div>
           </div>
         </van-tab>
@@ -39,10 +47,13 @@
 import { userStore } from "@/store/userStore.js";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import { getQuestionTotalAPI } from "@/api/home";
 export default {
   name: "HomeView",
   setup() {
+    // 路由
+    const router = useRouter();
     // tab切换
     const active = ref(0);
     // 用户数据
@@ -63,12 +74,22 @@ export default {
     // 切换tab
     const onClickTab = () => {};
 
+    // 跳转练习页面
+    const toTestPage = (type) => {
+      // 跳转
+      router.push({
+        path: "/practiceOrTest",
+        query: {
+          type,
+        },
+      });
+    };
+
     // 获取总数
     const getTotal = () => {
       getQuestionTotalAPI()
         .then((res) => {
           questionTotal.value = res.data ?? 0;
-          console.log(res);
         })
         .catch((err) => console.log(err));
     };
@@ -83,6 +104,7 @@ export default {
       getTotal,
       questionTotal,
       userInfo,
+      toTestPage,
     };
   },
   created() {

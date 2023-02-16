@@ -8,6 +8,12 @@ const routes = [
     component: Home,
   },
   {
+    path: "/practiceOrTest",
+    name: "practiceOrTest",
+    mate: { title: "做题 or 考试" },
+    component: () => import("@/views/practiceOrTest/index.vue"),
+  },
+  {
     path: "/my",
     name: "myView",
     mate: { title: "个人中心" },
