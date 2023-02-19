@@ -11,30 +11,56 @@
     <div class="practiceOrTest_root_question">
       <div class="practiceOrTest_root_question_info">
         <div class="practiceOrTest_root_question_info_title">
-          <span>第1题</span>
-          <van-tag type="primary">单选题</van-tag>
-          <van-tag type="success">多选题</van-tag>
-          <van-tag type="danger">判断题</van-tag>
+          <span>第{{ +pageNum + 1 }}题、</span>
+          <van-tag type="primary" v-if="question.data.titleType === '1'">
+            单选题
+          </van-tag>
+          <van-tag type="success" v-if="question.data.titleType === '3'">
+            多选题
+          </van-tag>
+          <van-tag type="danger" v-if="question.data.titleType === '2'">
+            判断题
+          </van-tag>
         </div>
         <div>
-          <div>故意遮挡号牌应该扣多少分？</div>
-          <div>
+          <div>{{ question.data.title }}</div>
+          <div v-if="question.data.titlePlc">
             <van-image
               width="100%"
               height="100%"
-              src="https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg"
+              :src="question.data.titlePlc"
             />
           </div>
         </div>
       </div>
       <div class="practiceOrTest_root_question_select">
         <van-radio-group v-model="checked">
-          <van-cell title="单选框 1" clickable @click="checked = '1'">
+          <van-cell :title="question.data.op1" clickable @click="checked = '1'">
             <template #right-icon>
               <van-radio shape="square" name="1" />
             </template>
           </van-cell>
-          <van-cell title="单选框 2" clickable @click="checked = '2'">
+          <van-cell :title="question.data.op2" clickable @click="checked = '2'">
+            <template #right-icon>
+              <van-radio shape="square" name="2" />
+            </template>
+          </van-cell>
+          <van-cell
+            v-if="question.data.op3"
+            :title="question.data.op3"
+            clickable
+            @click="checked = '2'"
+          >
+            <template #right-icon>
+              <van-radio shape="square" name="2" />
+            </template>
+          </van-cell>
+          <van-cell
+            v-if="question.data.op4"
+            :title="question.data.op4"
+            clickable
+            @click="checked = '2'"
+          >
             <template #right-icon>
               <van-radio shape="square" name="2" />
             </template>
@@ -49,6 +75,7 @@
     <!--    </div>-->
     <van-action-bar>
       <van-action-bar-icon icon="star" text="已收藏" color="#ff5000" />
+      <van-action-bar-icon text="1/100" color="#ff5000" />
       <van-action-bar-button
         color="#be99ff"
         type="warning"
@@ -75,11 +102,17 @@
 
 <script>
 import { useRouter, useRoute } from "vue-router/dist/vue-router";
-import { ref } from "vue";
+import { reactive, ref } from "vue";
+import { getQuestionAPI } from "@/api/practiceOrTest";
 
 export default {
   name: "practiceOrTest",
-
+  props: {
+    current: {
+      type: Number,
+      default: 0,
+    },
+  },
   setup() {
     // 路由实例
     const router = useRouter();
@@ -113,6 +146,28 @@ export default {
     // 处理标题
     const title = ref(types[type].title);
 
+    // 当前题
+    let question = reactive({ data: {} });
+
+    // 分页
+    const pageNum = ref(route.query.current || 0);
+
+    // 获取当前题
+    const getQuestion = () => {
+      const params = {
+        type: 1,
+        orderType: 1,
+        pageNum: pageNum.value,
+        pageSize: 1,
+      };
+      getQuestionAPI(params)
+        .then((res) => {
+          question.data = res.data || {};
+          console.log(question.data.title);
+        })
+        .catch(() => {});
+    };
+
     const onClickLeft = () => {
       router.back();
     };
@@ -125,7 +180,13 @@ export default {
       checked,
       type,
       showSelectQuestion,
+      question,
+      getQuestion,
+      pageNum,
     };
+  },
+  created() {
+    this.getQuestion();
   },
 };
 </script>
