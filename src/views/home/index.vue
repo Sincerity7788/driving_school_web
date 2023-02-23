@@ -11,7 +11,9 @@
               fill="#eee"
               :rate="rate"
               :color="gradientColor"
-              :text="`练习进度(${userInfo.quantity || 0}/${questionTotal})`"
+              :text="`练习进度(${questionTotal.quantity || 0}/${
+                questionTotal.total || 0
+              })`"
             />
           </div>
 
@@ -50,7 +52,7 @@
 <script>
 import { userStore } from "@/store/userStore.js";
 import { storeToRefs } from "pinia";
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { getQuestionTotalAPI } from "@/api/home";
 
@@ -69,7 +71,7 @@ export default {
     const rate = ref(0);
 
     // 总数,
-    const questionTotal = ref(0);
+    const questionTotal = reactive({});
     const gradientColor = {
       "0%": "#3fecff",
       "100%": "#6149f6",
@@ -81,17 +83,22 @@ export default {
       // 跳转,
       router.push({
         path: "/practiceOrTest",
-        query: { type, current: user.userInfo.quantity },
+        query: { type, current: questionTotal.quantity },
       });
     };
     // 获取总数,
     const getTotal = () => {
-      getQuestionTotalAPI()
+      getQuestionTotalAPI({ userId: user.userInfo.userId })
         .then((res) => {
-          questionTotal.value = res.data ?? 0;
+          Object.assign(questionTotal, res.data);
         })
         .catch((err) => console.log(err));
     };
+    // 存在用户就直接查询吧
+    if (user.userInfo.userId) {
+      getTotal();
+    }
+
     return {
       userName,
       active,
@@ -104,9 +111,6 @@ export default {
       userInfo,
       toTestPage,
     };
-  },
-  created() {
-    this.getTotal();
   },
 };
 </script>

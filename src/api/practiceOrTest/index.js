@@ -8,3 +8,12 @@ export function getQuestionAPI(params) {
     params,
   });
 }
+
+// 提交当前题答案
+export function addHistoryQuestionAPI(data) {
+  return request({
+    url: "/api/v1/historyQuestion/add",
+    method: "post",
+    data,
+  });
+}

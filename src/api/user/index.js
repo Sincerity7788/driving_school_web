@@ -9,3 +9,8 @@ export function loginAPI(data) {
 export function registerAPI(data) {
   return request({ url: "/api/v1/user/register", method: "post", data });
 }
+
+// 注册
+export function questionAddAPI(data) {
+  return request({ url: "/api/v1/question/add", method: "post", data });
+}

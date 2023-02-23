@@ -9,71 +9,52 @@
       />
     </div>
     <div class="practiceOrTest_root_question">
-      <div class="practiceOrTest_root_question_info">
-        <div class="practiceOrTest_root_question_info_title">
-          <span>第{{ +pageNum + 1 }}题、</span>
-          <van-tag type="primary" v-if="question.data.titleType === '1'">
-            单选题
-          </van-tag>
-          <van-tag type="success" v-if="question.data.titleType === '3'">
-            多选题
-          </van-tag>
-          <van-tag type="danger" v-if="question.data.titleType === '2'">
-            判断题
-          </van-tag>
-        </div>
-        <div>
-          <div>{{ question.data.title }}</div>
-          <div v-if="question.data.titlePlc">
-            <van-image
-              width="100%"
-              height="100%"
-              :src="question.data.titlePlc"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="practiceOrTest_root_question_select">
-        <van-radio-group v-model="checked">
-          <van-cell :title="question.data.op1" clickable @click="checked = '1'">
-            <template #right-icon>
-              <van-radio shape="square" name="1" />
-            </template>
-          </van-cell>
-          <van-cell :title="question.data.op2" clickable @click="checked = '2'">
-            <template #right-icon>
-              <van-radio shape="square" name="2" />
-            </template>
-          </van-cell>
-          <van-cell
-            v-if="question.data.op3"
-            :title="question.data.op3"
-            clickable
-            @click="checked = '2'"
-          >
-            <template #right-icon>
-              <van-radio shape="square" name="2" />
-            </template>
-          </van-cell>
-          <van-cell
-            v-if="question.data.op4"
-            :title="question.data.op4"
-            clickable
-            @click="checked = '2'"
-          >
-            <template #right-icon>
-              <van-radio shape="square" name="2" />
-            </template>
-          </van-cell>
-        </van-radio-group>
-      </div>
+      <QuestionHead :question="question" :page-num="+pageNum + 1" />
+      <Select ref="SelectRef" :question="question" />
     </div>
-    <!--    <div class="practiceOrTest_root_operate" v-if="type === '4'">-->
-    <!--      <van-button plain hairline type="primary">上一题</van-button>-->
-    <!--      <van-button plain hairline type="primary">提交考卷</van-button>-->
-    <!--      <van-button plain hairline type="success">下一题</van-button>-->
-    <!--    </div>-->
-    <van-action-bar>
+    <div class="practiceOrTest_root_operate">
+      <!--          <van-button plain hairline type="primary">上一题</van-button>-->
+      <van-button
+        plain
+        hairline
+        type="primary"
+        :disabled="answerInfo.show"
+        @click="addHistoryQuestion"
+      >
+        确 定
+      </van-button>
+      <van-button
+        plain
+        hairline
+        type="success"
+        @click="nextQuestion"
+        :disabled="!answerInfo.show"
+      >
+        下一题
+      </van-button>
+    </div>
+    <div v-show="answerInfo.show">
+      <van-collapse v-model="answerInfo.activeNames">
+        <van-collapse-item name="1">
+          <template #title>
+            <div
+              v-if="answerInfo.isRight"
+              class="practiceOrTest_root_answer_info success"
+            >
+              <van-icon name="success" />
+              <span>答对啦</span>
+            </div>
+            <div v-else class="practiceOrTest_root_answer_info danger">
+              <van-icon name="cross" />
+              <span>答错啦</span>
+            </div>
+          </template>
+          <div v-html="answerInfo.info"></div>
+        </van-collapse-item>
+      </van-collapse>
+    </div>
+
+    <van-action-bar v-if="type === '4'">
       <van-action-bar-icon icon="star" text="已收藏" color="#ff5000" />
       <van-action-bar-icon text="1/100" color="#ff5000" />
       <van-action-bar-button
@@ -103,7 +84,11 @@
 <script>
 import { useRouter, useRoute } from "vue-router/dist/vue-router";
 import { reactive, ref } from "vue";
-import { getQuestionAPI } from "@/api/practiceOrTest";
+import { addHistoryQuestionAPI, getQuestionAPI } from "@/api/practiceOrTest";
+import { userStore } from "@/store/userStore";
+import QuestionHead from "./components/Head";
+import Select from "./components/Select";
+import { showToast, showLoadingToast, closeToast } from "vant";
 
 export default {
   name: "practiceOrTest",
@@ -113,20 +98,30 @@ export default {
       default: 0,
     },
   },
+  components: {
+    QuestionHead,
+    Select,
+  },
   setup() {
+    // 用户信息
+    const user = userStore();
     // 路由实例
     const router = useRouter();
     // 当前路由信息
     const route = useRoute();
-
-    // 当前选中的题
-    const checked = ref(-1);
 
     // 当前题的类型
     const type = route.query.type;
 
     // 显示选择题
     const showSelectQuestion = ref(false);
+
+    // 显示题的解答信息
+    const answerInfo = reactive({
+      activeNames: ["1"],
+      isRight: false,
+      show: false,
+    });
 
     // 定义状态类型
     const types = {
@@ -147,13 +142,21 @@ export default {
     const title = ref(types[type].title);
 
     // 当前题
-    let question = reactive({ data: {} });
+    let question = reactive({});
 
     // 分页
     const pageNum = ref(route.query.current || 0);
 
+    // 获取当前选择项
+    const SelectRef = ref(null);
+
     // 获取当前题
     const getQuestion = () => {
+      showLoadingToast({
+        duration: 0,
+        forbidClick: true,
+        message: "加载中~",
+      });
       const params = {
         type: 1,
         orderType: 1,
@@ -162,10 +165,54 @@ export default {
       };
       getQuestionAPI(params)
         .then((res) => {
-          question.data = res.data || {};
-          console.log(question.data.title);
+          answerInfo.show = false;
+          Object.assign(question, res.data || {});
+          closeToast();
         })
         .catch(() => {});
+    };
+
+    // 提交当前题的答案
+    const addHistoryQuestion = () => {
+      // 获取子组件数据
+      const { checked, checkedList } = SelectRef.value;
+      const answer =
+        question.titleType === "3"
+          ? checkedList.sort((a, b) => a - b).join("")
+          : checked;
+      if (!answer) {
+        showToast("请先选择答案 !");
+        return;
+      }
+      showLoadingToast({
+        duration: 0,
+        forbidClick: true,
+        message: "提交中~",
+      });
+      const data = {
+        userId: user.userInfo.userId,
+        questionId: question.questionId,
+        id: question.id,
+        answer,
+      };
+      addHistoryQuestionAPI(data)
+        .then(({ data }) => {
+          closeToast();
+          answerInfo.show = true;
+          answerInfo.isRight = data.right;
+          answerInfo.info = data.answerExplain;
+        })
+        .catch(() => {});
+    };
+
+    // 下一题
+    const nextQuestion = () => {
+      // 分页数量+1
+      pageNum.value++;
+      // 重置选择信息
+      SelectRef.value.checked = "";
+      SelectRef.value.checkedList.length = 0;
+      getQuestion();
     };
 
     const onClickLeft = () => {
@@ -177,12 +224,15 @@ export default {
       router,
       title,
       types,
-      checked,
       type,
       showSelectQuestion,
       question,
       getQuestion,
       pageNum,
+      addHistoryQuestion,
+      answerInfo,
+      nextQuestion,
+      SelectRef,
     };
   },
   created() {
@@ -221,10 +271,19 @@ export default {
       margin-top: 20px;
     }
   }
+  .practiceOrTest_root_answer_info {
+    &.success {
+      color: #07c160;
+    }
+    &.danger {
+      color: #ee0a24;
+    }
+  }
   .practiceOrTest_root_operate {
     display: flex;
     justify-content: space-around;
-    padding-top: 100px;
+    padding-top: 60px;
+    padding-bottom: 40px;
   }
   .practiceOrTest_root_question_list {
     display: flex;
