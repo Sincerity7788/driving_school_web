@@ -13,7 +13,15 @@
       <Select ref="SelectRef" :question="question" />
     </div>
     <div class="practiceOrTest_root_operate">
-      <!--          <van-button plain hairline type="primary">上一题</van-button>-->
+      <van-button
+        plain
+        hairline
+        type="primary"
+        :disabled="pageNum === 0"
+        @click="changeQuestion(-1)"
+      >
+        上一题
+      </van-button>
       <van-button
         plain
         hairline
@@ -27,31 +35,14 @@
         plain
         hairline
         type="success"
-        @click="nextQuestion"
+        @click="changeQuestion(1)"
         :disabled="!answerInfo.show"
       >
         下一题
       </van-button>
     </div>
     <div v-show="answerInfo.show">
-      <van-collapse v-model="answerInfo.activeNames">
-        <van-collapse-item name="1">
-          <template #title>
-            <div
-              v-if="answerInfo.isRight"
-              class="practiceOrTest_root_answer_info success"
-            >
-              <van-icon name="success" />
-              <span>答对啦</span>
-            </div>
-            <div v-else class="practiceOrTest_root_answer_info danger">
-              <van-icon name="cross" />
-              <span>答错啦</span>
-            </div>
-          </template>
-          <div v-html="answerInfo.info"></div>
-        </van-collapse-item>
-      </van-collapse>
+      <AnswerInfo :answerInfo="answerInfo" />
     </div>
 
     <van-action-bar v-if="type === '4'">
@@ -88,6 +79,7 @@ import { addHistoryQuestionAPI, getQuestionAPI } from "@/api/practiceOrTest";
 import { userStore } from "@/store/userStore";
 import QuestionHead from "./components/Head";
 import Select from "./components/Select";
+import AnswerInfo from "./components/AnswerInfo";
 import { showToast, showLoadingToast, closeToast } from "vant";
 
 export default {
@@ -101,6 +93,7 @@ export default {
   components: {
     QuestionHead,
     Select,
+    AnswerInfo,
   },
   setup() {
     // 用户信息
@@ -118,8 +111,6 @@ export default {
 
     // 显示题的解答信息
     const answerInfo = reactive({
-      activeNames: ["1"],
-      isRight: false,
       show: false,
     });
 
@@ -145,7 +136,7 @@ export default {
     let question = reactive({});
 
     // 分页
-    const pageNum = ref(route.query.current || 0);
+    const pageNum = ref(+route.query.current || 0);
 
     // 获取当前选择项
     const SelectRef = ref(null);
@@ -162,6 +153,7 @@ export default {
         orderType: 1,
         pageNum: pageNum.value,
         pageSize: 1,
+        userId: user.userInfo.userId,
       };
       getQuestionAPI(params)
         .then((res) => {
@@ -169,7 +161,9 @@ export default {
           Object.assign(question, res.data || {});
           closeToast();
         })
-        .catch(() => {});
+        .catch(() => {
+          closeToast();
+        });
     };
 
     // 提交当前题的答案
@@ -198,17 +192,20 @@ export default {
       addHistoryQuestionAPI(data)
         .then(({ data }) => {
           closeToast();
+          Object.assign(answerInfo, data);
           answerInfo.show = true;
           answerInfo.isRight = data.right;
           answerInfo.info = data.answerExplain;
         })
-        .catch(() => {});
+        .catch(() => {
+          closeToast();
+        });
     };
 
-    // 下一题
-    const nextQuestion = () => {
+    // 下一题 或者 上一题
+    const changeQuestion = (pageNumValue) => {
       // 分页数量+1
-      pageNum.value++;
+      pageNum.value += pageNumValue;
       // 重置选择信息
       SelectRef.value.checked = "";
       SelectRef.value.checkedList.length = 0;
@@ -231,7 +228,7 @@ export default {
       pageNum,
       addHistoryQuestion,
       answerInfo,
-      nextQuestion,
+      changeQuestion,
       SelectRef,
     };
   },
@@ -269,14 +266,6 @@ export default {
 
     .practiceOrTest_root_question_select {
       margin-top: 20px;
-    }
-  }
-  .practiceOrTest_root_answer_info {
-    &.success {
-      color: #07c160;
-    }
-    &.danger {
-      color: #ee0a24;
     }
   }
   .practiceOrTest_root_operate {

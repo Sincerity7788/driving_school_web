@@ -80,10 +80,18 @@ export default {
     const onClickTab = () => {};
     // 跳转练习页面,
     const toTestPage = (type) => {
+      let current = questionTotal.quantity;
+      if (type === 2) {
+        current = Math.floor(Math.random() * questionTotal.total);
+      }
+      if (type === 3) {
+        current = 1;
+      }
+
       // 跳转,
       router.push({
         path: "/practiceOrTest",
-        query: { type, current: questionTotal.quantity },
+        query: { type, current },
       });
     };
     // 获取总数,

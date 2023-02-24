@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import { reactive, ref } from "vue";
+import { reactive, ref, effect } from "vue";
 
 export default {
   name: "SelectView",
@@ -62,6 +62,7 @@ export default {
     const selectList = reactive([]);
     // 选择项
     const selectItem = (data) => {
+      console.log(data, data.titleType);
       selectList.length = 0;
       let list = [
         {
@@ -94,9 +95,12 @@ export default {
         ];
       }
       selectList.push(...list);
+      console.log(selectList);
     };
 
-    selectItem(props.question);
+    effect(() => {
+      selectItem(props.question);
+    });
 
     return {
       checkedList,
