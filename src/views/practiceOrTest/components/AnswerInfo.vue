@@ -19,7 +19,15 @@
           <div class="practiceOrTest_root_answer_info_count">
             <span v-show="!answerInfo.right">
               正确答案：
-              <strong class="primary">{{ answerInfo.answer }}</strong>
+              <strong class="primary">
+                {{
+                  answerInfo.answer === "true"
+                    ? "正确"
+                    : answerInfo.answer === "false"
+                    ? "错误"
+                    : answerInfo.answer
+                }}
+              </strong>
             </span>
             <span>
               遇到过

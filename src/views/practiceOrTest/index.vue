@@ -9,7 +9,7 @@
       />
     </div>
     <div class="practiceOrTest_root_question">
-      <QuestionHead :question="question" :page-num="+pageNum + 1" />
+      <QuestionHead :question="question" :page-num="pageNum" />
       <Select ref="SelectRef" :question="question" />
     </div>
     <div class="practiceOrTest_root_operate">
@@ -36,7 +36,7 @@
         hairline
         type="success"
         @click="changeQuestion(1)"
-        :disabled="!answerInfo.show"
+        :disabled="!answerInfo.show || questionInfo.total <= pageNum"
       >
         下一题
       </van-button>
@@ -80,7 +80,7 @@ import { userStore } from "@/store/userStore";
 import QuestionHead from "./components/Head";
 import Select from "./components/Select";
 import AnswerInfo from "./components/AnswerInfo";
-import { showToast, showLoadingToast, closeToast } from "vant";
+import { showToast, showLoadingToast, closeToast, showFailToast } from "vant";
 
 export default {
   name: "practiceOrTest",
@@ -134,6 +134,7 @@ export default {
 
     // 当前题
     let question = reactive({});
+    let questionInfo = reactive({});
 
     // 分页
     const pageNum = ref(+route.query.current || 0);
@@ -150,7 +151,7 @@ export default {
       });
       const params = {
         type: 1,
-        orderType: 1,
+        orderType: type,
         pageNum: pageNum.value,
         pageSize: 1,
         userId: user.userInfo.userId,
@@ -158,7 +159,8 @@ export default {
       getQuestionAPI(params)
         .then((res) => {
           answerInfo.show = false;
-          Object.assign(question, res.data || {});
+          Object.assign(question, res.data?.records[0] || {});
+          Object.assign(questionInfo, res.data || {});
           closeToast();
         })
         .catch(() => {
@@ -204,6 +206,10 @@ export default {
 
     // 下一题 或者 上一题
     const changeQuestion = (pageNumValue) => {
+      if (type === "3" && questionInfo.total <= pageNum.value) {
+        showFailToast("最后一题了");
+        return;
+      }
       // 分页数量+1
       pageNum.value += pageNumValue;
       // 重置选择信息
@@ -230,6 +236,7 @@ export default {
       answerInfo,
       changeQuestion,
       SelectRef,
+      questionInfo,
     };
   },
   created() {

@@ -80,12 +80,15 @@ export default {
     const onClickTab = () => {};
     // 跳转练习页面,
     const toTestPage = (type) => {
-      let current = questionTotal.quantity;
+      let current = +questionTotal.quantity + 1;
       if (type === 2) {
         current = Math.floor(Math.random() * questionTotal.total);
       }
       if (type === 3) {
         current = 1;
+      }
+      if (type === 4) {
+        return;
       }
 
       // 跳转,
