@@ -45,6 +45,14 @@
       <div v-html="answerInfo.answerExplain"></div>
     </van-collapse-item>
   </van-collapse>
+  <div class="AnswerInfo_btn">
+    <span class="active">
+      <van-icon name="like-o" />
+      <van-icon name="like" />
+    </span>
+    <span>收藏</span>
+    <span>取消</span>
+  </div>
 </template>
 
 <script>
@@ -89,6 +97,19 @@ export default {
     & > strong.primary {
       color: #1989fa;
     }
+  }
+}
+.AnswerInfo_btn {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding-top: 60px;
+  color: #999;
+  & > span:nth-child(1) {
+    font-size: 80px;
+  }
+  & > span.active {
+    color: orangered;
   }
 }
 </style>

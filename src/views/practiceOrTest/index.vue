@@ -13,15 +13,15 @@
       <Select ref="SelectRef" :question="question" />
     </div>
     <div class="practiceOrTest_root_operate">
-      <van-button
-        plain
-        hairline
-        type="primary"
-        :disabled="pageNum === 0"
-        @click="changeQuestion(-1)"
-      >
-        上一题
-      </van-button>
+      <!--      <van-button-->
+      <!--        plain-->
+      <!--        hairline-->
+      <!--        type="primary"-->
+      <!--        :disabled="pageNum === 0"-->
+      <!--        @click="changeQuestion(-1)"-->
+      <!--      >-->
+      <!--        上一题-->
+      <!--      </van-button>-->
       <van-button
         plain
         hairline
@@ -160,6 +160,7 @@ export default {
         .then((res) => {
           answerInfo.show = false;
           Object.assign(question, res.data?.records[0] || {});
+          question.total = res.data.total || 0;
           Object.assign(questionInfo, res.data || {});
           closeToast();
         })
@@ -206,7 +207,10 @@ export default {
 
     // 下一题 或者 上一题
     const changeQuestion = (pageNumValue) => {
-      if (type === "3" && questionInfo.total <= pageNum.value) {
+      if (
+        (type === "3" || type === "1") &&
+        questionInfo.total <= pageNum.value
+      ) {
         showFailToast("最后一题了");
         return;
       }

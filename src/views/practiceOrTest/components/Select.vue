@@ -51,7 +51,6 @@ export default {
     const checkboxRefs = reactive([]);
     // 切换多选
     const toggle = (index) => {
-      console.log(checkboxRefs);
       checkboxRefs[index].toggle();
     };
 
@@ -95,7 +94,6 @@ export default {
         ];
       }
       selectList.push(...list);
-      console.log(selectList);
     };
 
     effect(() => {
