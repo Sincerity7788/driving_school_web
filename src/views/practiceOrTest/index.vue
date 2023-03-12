@@ -8,79 +8,58 @@
         @click-left="onClickLeft"
       />
     </div>
+    <!--   题目内容   -->
     <div class="practiceOrTest_root_question">
-      <QuestionHead :question="question" :page-num="pageNum" />
-      <Select ref="SelectRef" :question="question" />
-    </div>
-    <div class="practiceOrTest_root_operate">
-      <!--      <van-button-->
-      <!--        plain-->
-      <!--        hairline-->
-      <!--        type="primary"-->
-      <!--        :disabled="pageNum === 0"-->
-      <!--        @click="changeQuestion(-1)"-->
-      <!--      >-->
-      <!--        上一题-->
-      <!--      </van-button>-->
-      <van-button
-        plain
-        hairline
-        type="primary"
-        :disabled="answerInfo.show"
-        @click="addHistoryQuestion"
-      >
-        确 定
-      </van-button>
-      <van-button
-        plain
-        hairline
-        type="success"
-        @click="changeQuestion(1)"
-        :disabled="!answerInfo.show || questionInfo.total <= pageNum"
-      >
-        下一题
-      </van-button>
-    </div>
-    <div v-show="answerInfo.show">
-      <AnswerInfo :answerInfo="answerInfo" />
-    </div>
-
-    <van-action-bar v-if="type === '4'">
-      <van-action-bar-icon icon="star" text="已收藏" color="#ff5000" />
-      <van-action-bar-icon text="1/100" color="#ff5000" />
-      <van-action-bar-button
-        color="#be99ff"
-        type="warning"
-        text="选择题目"
-        @click="showSelectQuestion = true"
-      />
-      <van-action-bar-button color="#7232dd" type="danger" text="提交考卷" />
-    </van-action-bar>
-    <van-action-sheet
-      :show="showSelectQuestion"
-      title="所有题(0/100)"
-      @cancel="showSelectQuestion = false"
-    >
-      <div class="practiceOrTest_root_question_list">
-        <div v-for="item in 100" :key="item">
-          <van-tag plain type="primary" size="large">
-            {{ item }}
-          </van-tag>
-        </div>
+      <QuestionHead :question="questionInfo" :page-num="pagingInfo.current" />
+      <div class="practiceOrTest_root_question_select">
+        <Select ref="selectRef" :selectInfo="selectInfo" />
       </div>
-    </van-action-sheet>
+    </div>
+    <div class="practiceOrTest_root_btn">
+      <!--   操作按钮   -->
+      <van-button
+        type="primary"
+        @click="addHistoryQuestion"
+        :disabled="showAnswer"
+      >
+        确定
+      </van-button>
+      <van-button type="success" @click="nextQuestion">下一题</van-button>
+    </div>
+    <div v-if="queryInfo.type === '5'">
+      <van-cell title="收藏该题">
+        <template #right-icon>
+          <van-switch v-model="collect" />
+        </template>
+      </van-cell>
+    </div>
+    <div v-show="showAnswer">
+      <AnswerInfo :answer-info="answerInfo" />
+    </div>
+    <div v-if="queryInfo.type === '4'">
+      <SelectQuestion
+        :question-list="questionList"
+        @changeQuestion="changeQuestion"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import { useRouter, useRoute } from "vue-router/dist/vue-router";
 import { reactive, ref } from "vue";
-import { addHistoryQuestionAPI, getQuestionAPI } from "@/api/practiceOrTest";
+import { storeToRefs } from "pinia";
+import {
+  addHistoryQuestionAPI,
+  getQuestionAPI,
+  getQuestionIndexDataAPI,
+} from "@/api/practiceOrTest";
 import { userStore } from "@/store/userStore";
 import QuestionHead from "./components/Head";
 import Select from "./components/Select";
 import AnswerInfo from "./components/AnswerInfo";
-import { showToast, showLoadingToast, closeToast, showFailToast } from "vant";
+import SelectQuestion from "./components/SelectQuestion";
+import { showLoadingToast, closeToast } from "vant";
 
 export default {
   name: "practiceOrTest",
@@ -94,157 +73,224 @@ export default {
     QuestionHead,
     Select,
     AnswerInfo,
+    SelectQuestion,
   },
   setup() {
+    // 当前标题信息
+    const titleKeys = {
+      1: "顺序练习",
+      2: "随机练习",
+      3: "错题练习",
+      4: "模拟考试",
+    };
+
     // 用户信息
     const user = userStore();
+    // 结构需要的数据
+    const { userInfo } = storeToRefs(user);
     // 路由实例
     const router = useRouter();
     // 当前路由信息
     const route = useRoute();
 
-    // 当前题的类型
-    const type = route.query.type;
+    // 当前路由参数信息
+    const queryInfo = reactive({ ...route.query });
 
-    // 显示选择题
-    const showSelectQuestion = ref(false);
-
-    // 显示题的解答信息
-    const answerInfo = reactive({
-      show: false,
+    // 当前题的信息
+    const questionInfo = reactive({
+      title: "",
+      titleType: "1",
+      titlePic: "",
+      current: 0,
+      total: 0,
     });
+    // 分页信息
+    const pagingInfo = reactive({
+      current: +queryInfo.current,
+      total: 0,
+    });
+    // 选择项信息
+    const selectInfo = reactive({
+      question: questionInfo, // 题的信息
+      isDisable: false, // 是否禁止选择
+      answer: "", // 已经选择过的答案
+    });
+    // 答案信息
+    const answerInfo = reactive({});
+    // 模拟考试题的列表信息
+    const questionList = reactive(new Array(100))
+      .fill(1)
+      .map(() => ({
+        question: null,
+        answer: null,
+      }));
 
-    // 定义状态类型
-    const types = {
-      1: {
-        title: "顺序练习",
-      },
-      2: {
-        title: "随机练习",
-      },
-      3: {
-        title: "错题练习",
-      },
-      4: {
-        title: "模拟考试",
-      },
-    };
-    // 处理标题
-    const title = ref(types[type].title);
+    // 获取select组件的实例
+    const selectRef = ref(null);
+    // 页面标题
+    const title = ref(titleKeys[queryInfo.type]);
+    // 是否显示答案
+    const showAnswer = ref(false);
+    // 收藏该题
+    const collect = ref(false);
 
-    // 当前题
-    let question = reactive({});
-    let questionInfo = reactive({});
-
-    // 分页
-    const pageNum = ref(+route.query.current || 0);
-
-    // 获取当前选择项
-    const SelectRef = ref(null);
-
-    // 获取当前题
-    const getQuestion = () => {
+    // 获取题的信息
+    const getQuestionInfo = () => {
+      // 开启加载提示
       showLoadingToast({
-        duration: 0,
+        message: "加载中...",
         forbidClick: true,
-        message: "加载中~",
       });
       const params = {
-        type: 1,
-        orderType: type,
-        pageNum: pageNum.value,
+        userId: userInfo.value.userId,
+        type: 1, // 科目1还是科目2
+        orderType: queryInfo.type, // 当前的模式 1顺序练习 2随机练习 3错题练习
+        pageNum: pagingInfo.current, // 当前页数
         pageSize: 1,
-        userId: user.userInfo.userId,
       };
-      getQuestionAPI(params)
-        .then((res) => {
-          answerInfo.show = false;
-          Object.assign(question, res.data?.records[0] || {});
-          question.total = res.data.total || 0;
-          Object.assign(questionInfo, res.data || {});
-          closeToast();
-        })
-        .catch(() => {
-          closeToast();
+      // 判断当前是不是模拟考试
+      if (queryInfo.type === "4") {
+        getQuestionIndexDataAPI({
+          userId: params.userId,
+          index: params.pageNum - 1,
+        }).then((res) => {
+          updateQuestionInfo({
+            current: pagingInfo.current,
+            total: 100,
+            question: res.data || {},
+          });
+          // 保存一份在做题列表中
+          questionList[pagingInfo.current - 1].question = res.data;
         });
-    };
-
-    // 提交当前题的答案
-    const addHistoryQuestion = () => {
-      // 获取子组件数据
-      const { checked, checkedList } = SelectRef.value;
-      const answer =
-        question.titleType === "3"
-          ? checkedList.sort((a, b) => a - b).join("")
-          : checked;
-      if (!answer) {
-        showToast("请先选择答案 !");
-        return;
-      }
-      showLoadingToast({
-        duration: 0,
-        forbidClick: true,
-        message: "提交中~",
-      });
-      const data = {
-        userId: user.userInfo.userId,
-        questionId: question.questionId,
-        id: question.id,
-        answer,
-      };
-      addHistoryQuestionAPI(data)
-        .then(({ data }) => {
-          closeToast();
-          Object.assign(answerInfo, data);
-          answerInfo.show = true;
-          answerInfo.isRight = data.right;
-          answerInfo.info = data.answerExplain;
-        })
-        .catch(() => {
-          closeToast();
+      } else {
+        getQuestionAPI(params).then((res) => {
+          updateQuestionInfo({
+            data: res.data,
+            question: res.data?.records?.[0] || {},
+          });
         });
-    };
-
-    // 下一题 或者 上一题
-    const changeQuestion = (pageNumValue) => {
-      if (
-        (type === "3" || type === "1") &&
-        questionInfo.total <= pageNum.value
-      ) {
-        showFailToast("最后一题了");
-        return;
       }
-      // 分页数量+1
-      pageNum.value += pageNumValue;
-      // 重置选择信息
-      SelectRef.value.checked = "";
-      SelectRef.value.checkedList.length = 0;
-      getQuestion();
     };
 
+    // 给题目信息赋值
+    const updateQuestionInfo = (data) => {
+      // 保存分页信息
+      pagingInfo.total = data.total || 0;
+      // 保存当前题信息
+      Object.assign(questionInfo, data.question);
+      questionInfo.total = pagingInfo.total;
+      questionInfo.current = pagingInfo.current;
+      // 获取到题的信息取消禁止
+      selectInfo.isDisable = false;
+      // 清除加载中提示
+      closeToast();
+    };
+
+    // 返回方法
     const onClickLeft = () => {
       router.back();
     };
 
+    // 下一题
+    const nextQuestion = () => {
+      pagingInfo.current++;
+      // 获取信息
+      getQuestionInfo();
+      // 重置选择信息
+      resetSelectAndAnswer();
+    };
+    // 重置选择信息
+    const resetSelectAndAnswer = () => {
+      // 关闭答案区域的dom
+      showAnswer.value = false;
+      // 清除选择项
+      selectRef.value.resetSelectData();
+    };
+
+    // 确定提交
+    const addHistoryQuestion = () => {
+      // 提交信息
+      const data = {
+        userId: userInfo.value.userId,
+        id: questionInfo.id,
+        questionId: questionInfo.questionId,
+        answer: selectRef.value.getAnswer().value,
+      };
+
+      // 开启加载提示
+      showLoadingToast({
+        message: "提交中...",
+        forbidClick: true,
+      });
+      addHistoryQuestionAPI(data).then((res) => {
+        // 保存答案
+        Object.assign(answerInfo, res.data);
+        // 显示答案区域的dom
+        showAnswer.value = true;
+        // 获取到了答案就应该让选择框禁止
+        selectInfo.isDisable = true;
+        // 保存一份答案到历史信息中
+        questionList[pagingInfo.current - 1].answer = res.data;
+        questionList[pagingInfo.current - 1].historyAnswer = data.answer;
+        // 清除加载中提示
+        closeToast();
+      });
+    };
+
+    // 全部题中选择某个题
+    const changeQuestion = (item, index) => {
+      // 判断当前index和当前页是不是相等
+      if (index === pagingInfo.current - 1) {
+        return;
+      }
+      // 重置选择信息
+      resetSelectAndAnswer();
+      // 改变分页，请求数据
+      pagingInfo.current = index + 1;
+      // 判断当前是否选择过
+      if (item.question) {
+        // 直接赋值
+        updateQuestionInfo({
+          current: pagingInfo.current,
+          total: 100,
+          question: item.question || {},
+        });
+        // 判断是否已经选择过
+        if (item.answer) {
+          // 将答案保存
+          selectInfo.answer = item.historyAnswer;
+          // 显示答案的信息
+          Object.assign(answerInfo, item.answer);
+          // 显示答案区域的dom
+          showAnswer.value = true;
+          // 获取到了答案就应该让选择框禁止
+          selectInfo.isDisable = true;
+        }
+      } else {
+        getQuestionInfo();
+      }
+    };
+
     return {
       onClickLeft,
-      router,
       title,
-      types,
-      type,
-      showSelectQuestion,
-      question,
-      getQuestion,
-      pageNum,
-      addHistoryQuestion,
-      answerInfo,
-      changeQuestion,
-      SelectRef,
       questionInfo,
+      queryInfo,
+      getQuestionInfo,
+      selectInfo,
+      nextQuestion,
+      addHistoryQuestion,
+      selectRef,
+      answerInfo,
+      showAnswer,
+      collect,
+      questionList,
+      changeQuestion,
+      pagingInfo,
     };
   },
   created() {
-    this.getQuestion();
+    this.getQuestionInfo();
   },
 };
 </script>
@@ -253,46 +299,14 @@ export default {
 .practiceOrTest_root {
   .practiceOrTest_root_question {
     padding: 20px;
-    .practiceOrTest_root_question_info {
-      box-shadow: 0 0 10px 0 #eee;
-
-      .practiceOrTest_root_question_info_title {
-        display: flex;
-        justify-content: space-between;
-        padding: 20px;
-        border-bottom: 1px solid #eee;
-        & > span:nth-child(1) {
-          font-size: 30px;
-          font-weight: bold;
-        }
-      }
-      & > div {
-        padding: 20px;
-        & > div:nth-child(2) {
-          height: 300px;
-          margin-top: 10px;
-        }
-      }
-    }
-
     .practiceOrTest_root_question_select {
-      margin-top: 20px;
+      margin: 20px 0;
     }
   }
-  .practiceOrTest_root_operate {
+  .practiceOrTest_root_btn {
     display: flex;
     justify-content: space-around;
-    padding-top: 60px;
-    padding-bottom: 40px;
-  }
-  .practiceOrTest_root_question_list {
-    display: flex;
-    flex-wrap: wrap;
-    box-sizing: border-box;
-    padding: 20px;
-    & > div {
-      margin: 0 20px 20px 0;
-    }
+    margin-bottom: 40px;
   }
 }
 </style>

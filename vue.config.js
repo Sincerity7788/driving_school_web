@@ -12,6 +12,18 @@ module.exports = defineConfig(() => ({
       }),
     ],
   },
+  devServer: {
+    proxy: {
+      "/api-cc": {
+        target: "https://www.mxnzp.com",
+        ws: true,
+        changeOrigin: true,
+        pathRewrite: {
+          "^/api-cc": "/",
+        },
+      },
+    },
+  },
   css: {
     loaderOptions: {
       postcss: {

@@ -17,3 +17,12 @@ export function addHistoryQuestionAPI(data) {
     data,
   });
 }
+
+// 获取模拟考试题
+export function getQuestionIndexDataAPI(params) {
+  return request({
+    url: "/api/v1/quesRen/getQuestionIndexData",
+    method: "get",
+    params,
+  });
+}
