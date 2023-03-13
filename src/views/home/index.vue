@@ -3,48 +3,47 @@
     <div class="home_root_title">欢迎使用驾考必过练习</div>
     <div>
       <van-tabs v-model:active="active" @click-tab="onClickTab">
-        <van-tab :name="1" title="科目一">
-          <div class="home_root_btn">
-            <van-circle
-              v-model:current-rate="currentRate"
-              layer-color="#ebedf0"
-              fill="#eee"
-              :rate="rate"
-              :color="gradientColor"
-              :text="`练习进度(${questionTotal.quantity || 0}/${
-                questionTotal.total || 0
-              })`"
-            />
-          </div>
-
-          <div class="home_root_btn_group">
-            <div>
-              <van-button plain block type="success" @click="toTestPage(1)">
-                顺序练习
-              </van-button>
-            </div>
-
-            <div>
-              <van-button plain block type="primary" @click="toTestPage(2)">
-                随机练习
-              </van-button>
-            </div>
-
-            <div>
-              <van-button plain block type="warning" @click="toTestPage(3)">
-                错题练习
-              </van-button>
-            </div>
-
-            <div>
-              <van-button block type="success" @click="toTestPage(4)">
-                模拟考试
-              </van-button>
-            </div>
-          </div>
-        </van-tab>
+        <van-tab :name="1" title="科目一"></van-tab>
         <van-tab :name="2" title="科目四"></van-tab>
       </van-tabs>
+      <div class="home_root_btn">
+        <van-circle
+          v-model:current-rate="currentRate"
+          layer-color="#ebedf0"
+          fill="#eee"
+          :rate="rate"
+          :color="gradientColor"
+          :text="`练习进度(${questionTotal.quantity || 0}/${
+            questionTotal.total || 0
+          })`"
+        />
+      </div>
+
+      <div class="home_root_btn_group">
+        <div>
+          <van-button plain block type="success" @click="toTestPage(1)">
+            顺序练习
+          </van-button>
+        </div>
+
+        <div>
+          <van-button plain block type="primary" @click="toTestPage(2)">
+            随机练习
+          </van-button>
+        </div>
+
+        <div>
+          <van-button plain block type="warning" @click="toTestPage(3)">
+            错题练习
+          </van-button>
+        </div>
+
+        <div>
+          <van-button block type="success" @click="toTestPage(4)">
+            模拟考试
+          </van-button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -76,20 +75,22 @@ export default {
       "100%": "#6149f6",
     };
     // 切换tab,
-    const onClickTab = () => {};
+    const onClickTab = () => {
+      getTotal();
+    };
     // 跳转练习页面,
-    const toTestPage = (type) => {
+    const toTestPage = (operationType) => {
       let current = +questionTotal.quantity + 1;
-      if (type === 2) {
+      if (operationType === 2) {
         current = Math.floor(Math.random() * questionTotal.total);
       }
-      if (type === 3 || type === 4) {
+      if (operationType === 3 || operationType === 4) {
         current = 1;
       }
       // 跳转,
       router.push({
         path: "/practiceOrTest",
-        query: { type, current },
+        query: { operationType, current, type: active.value },
       });
     };
 

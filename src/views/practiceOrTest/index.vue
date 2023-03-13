@@ -24,19 +24,21 @@
       >
         确定
       </van-button>
-      <van-button type="success" @click="nextQuestion">下一题</van-button>
+      <van-button type="success" @click="nextQuestion" :disabled="!showAnswer">
+        下一题
+      </van-button>
     </div>
-    <div v-if="queryInfo.type === '5'">
+    <div v-if="queryInfo.operationType !== '4'">
       <van-cell title="收藏该题">
         <template #right-icon>
-          <van-switch v-model="collect" />
+          <van-switch v-model="collect" @change="addCollect" />
         </template>
       </van-cell>
     </div>
     <div v-show="showAnswer">
       <AnswerInfo :answer-info="answerInfo" />
     </div>
-    <div v-if="queryInfo.type === '4'">
+    <div v-if="queryInfo.operationType === '4'">
       <SelectQuestion
         :question-list="questionList"
         @changeQuestion="changeQuestion"
@@ -50,25 +52,22 @@ import { useRouter, useRoute } from "vue-router/dist/vue-router";
 import { reactive, ref } from "vue";
 import { storeToRefs } from "pinia";
 import {
+  addCollectAPI,
   addHistoryQuestionAPI,
+  deleteUserCollectAPI,
   getQuestionAPI,
   getQuestionIndexDataAPI,
+  userHasQuestionAPI,
 } from "@/api/practiceOrTest";
 import { userStore } from "@/store/userStore";
 import QuestionHead from "./components/Head";
 import Select from "./components/Select";
 import AnswerInfo from "./components/AnswerInfo";
 import SelectQuestion from "./components/SelectQuestion";
-import { showLoadingToast, closeToast } from "vant";
+import { showLoadingToast, closeToast, showSuccessToast } from "vant";
 
 export default {
   name: "practiceOrTest",
-  props: {
-    current: {
-      type: Number,
-      default: 0,
-    },
-  },
   components: {
     QuestionHead,
     Select,
@@ -128,7 +127,7 @@ export default {
     // 获取select组件的实例
     const selectRef = ref(null);
     // 页面标题
-    const title = ref(titleKeys[queryInfo.type]);
+    const title = ref(titleKeys[queryInfo.operationType]);
     // 是否显示答案
     const showAnswer = ref(false);
     // 收藏该题
@@ -143,13 +142,13 @@ export default {
       });
       const params = {
         userId: userInfo.value.userId,
-        type: 1, // 科目1还是科目2
-        orderType: queryInfo.type, // 当前的模式 1顺序练习 2随机练习 3错题练习
+        type: queryInfo.type, // 科目1还是科目2
+        orderType: queryInfo.operationType, // 当前的模式 1顺序练习 2随机练习 3错题练习
         pageNum: pagingInfo.current, // 当前页数
         pageSize: 1,
       };
       // 判断当前是不是模拟考试
-      if (queryInfo.type === "4") {
+      if (queryInfo.operationType === "4") {
         getQuestionIndexDataAPI({
           userId: params.userId,
           index: params.pageNum - 1,
@@ -165,7 +164,8 @@ export default {
       } else {
         getQuestionAPI(params).then((res) => {
           updateQuestionInfo({
-            data: res.data,
+            total: res.data.total,
+            current: res.data.current,
             question: res.data?.records?.[0] || {},
           });
         });
@@ -174,6 +174,8 @@ export default {
 
     // 给题目信息赋值
     const updateQuestionInfo = (data) => {
+      // 获取收藏
+      getHasCollect(data);
       // 保存分页信息
       pagingInfo.total = data.total || 0;
       // 保存当前题信息
@@ -215,6 +217,7 @@ export default {
         id: questionInfo.id,
         questionId: questionInfo.questionId,
         answer: selectRef.value.getAnswer().value,
+        type: queryInfo.type,
       };
 
       // 开启加载提示
@@ -271,6 +274,39 @@ export default {
       }
     };
 
+    // 查询是否收藏过
+    const getHasCollect = (data) => {
+      const params = {
+        userId: userInfo.value.userId,
+        questionId: data.question.questionId,
+      };
+      userHasQuestionAPI(params).then((res) => {
+        collect.value = res.data;
+      });
+    };
+
+    // 收藏
+    const addCollect = () => {
+      if (collect.value) {
+        const data = {
+          questionId: questionInfo.questionId,
+          questionTitle: questionInfo.title,
+          userId: userInfo.value.userId,
+        };
+        addCollectAPI(data).then(() => {
+          showSuccessToast("收藏成功");
+        });
+      } else {
+        const params = {
+          userId: userInfo.value.userId,
+          questionId: questionInfo.questionId,
+        };
+        deleteUserCollectAPI(params).then(() => {
+          showSuccessToast("取消收藏成功");
+        });
+      }
+    };
+
     return {
       onClickLeft,
       title,
@@ -287,6 +323,7 @@ export default {
       questionList,
       changeQuestion,
       pagingInfo,
+      addCollect,
     };
   },
   created() {

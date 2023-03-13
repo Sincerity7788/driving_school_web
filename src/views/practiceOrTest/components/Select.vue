@@ -25,7 +25,7 @@
       <van-cell
         v-for="(item, index) in selectList"
         :key="index"
-        :title="selectInfo.question[item.prop]"
+        :title="item.title"
         @click="cellClick(item)"
       >
         <template #right-icon>
@@ -71,24 +71,20 @@ export default {
     // 选择项
     const selectItem = (data) => {
       selectList.length = 0;
-      let list = [
-        {
-          prop: "op1",
-          name: "A",
-        },
-        {
-          prop: "op2",
-          name: "B",
-        },
-        {
-          prop: "op3",
-          name: "C",
-        },
-        {
-          prop: "op4",
-          name: "D",
-        },
+      const keys = [
+        { name: "A", prop: "op1" },
+        { name: "B", prop: "op2" },
+        { name: "C", prop: "op3" },
+        { name: "D", prop: "op4" },
       ];
+      let list = keys.reduce((crx, item) => {
+        if (data[item.prop]) {
+          item.title = data[item.prop];
+          crx.push(item);
+        }
+
+        return crx;
+      }, []);
       if (data.titleType === "2") {
         list = [
           {

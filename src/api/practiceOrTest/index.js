@@ -26,3 +26,30 @@ export function getQuestionIndexDataAPI(params) {
     params,
   });
 }
+
+// 查询指定用户是否收藏该题
+export function userHasQuestionAPI(params) {
+  return request({
+    url: "/api/v1/collect/userHasQuestion",
+    method: "get",
+    params,
+  });
+}
+
+// 取消收藏该题
+export function deleteUserCollectAPI(params) {
+  return request({
+    url: "/api/v1/collect/deleteUserCollect",
+    method: "get",
+    params,
+  });
+}
+
+// 指定用户收藏该题
+export function addCollectAPI(data) {
+  return request({
+    url: "/api/v1/collect/addCollect",
+    method: "post",
+    data,
+  });
+}
