@@ -10,7 +10,11 @@
     </div>
     <!--   题目内容   -->
     <div class="practiceOrTest_root_question">
-      <QuestionHead :question="questionInfo" :page-num="pagingInfo.current" />
+      <QuestionHead
+        :question="questionInfo"
+        :page-num="pagingInfo.current"
+        :query-info="queryInfo"
+      />
       <div class="practiceOrTest_root_question_select">
         <Select ref="selectRef" :selectInfo="selectInfo" />
       </div>
@@ -24,7 +28,11 @@
       >
         确定
       </van-button>
-      <van-button type="success" @click="nextQuestion" :disabled="!showAnswer">
+      <van-button
+        type="success"
+        @click="nextQuestion"
+        :disabled="!showAnswer && queryInfo.operationType !== '4'"
+      >
         下一题
       </van-button>
     </div>
@@ -49,12 +57,13 @@
 
 <script>
 import { useRouter, useRoute } from "vue-router/dist/vue-router";
-import { reactive, ref } from "vue";
+import { reactive, ref, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import {
   addCollectAPI,
   addHistoryQuestionAPI,
   deleteUserCollectAPI,
+  deleteRedisQuestionAPI,
   getQuestionAPI,
   getQuestionIndexDataAPI,
   userHasQuestionAPI,
@@ -175,7 +184,11 @@ export default {
     // 给题目信息赋值
     const updateQuestionInfo = (data) => {
       // 获取收藏
-      getHasCollect(data);
+      // 判断如果是模拟考试就不提示
+      if (queryInfo.operationType !== "4") {
+        getHasCollect(data);
+      }
+
       // 保存分页信息
       pagingInfo.total = data.total || 0;
       // 保存当前题信息
@@ -306,6 +319,11 @@ export default {
         });
       }
     };
+
+    // 监听组件销毁就删除redis中的数据
+    onUnmounted(() => {
+      deleteRedisQuestionAPI({ userId: userInfo.value.userId }).then(() => {});
+    });
 
     return {
       onClickLeft,

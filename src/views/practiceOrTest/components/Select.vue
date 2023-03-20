@@ -82,7 +82,6 @@ export default {
           item.title = data[item.prop];
           crx.push(item);
         }
-
         return crx;
       }, []);
       if (data.titleType === "2") {
@@ -90,10 +89,12 @@ export default {
           {
             prop: "op1",
             name: "true",
+            title: "正确",
           },
           {
             prop: "op2",
             name: "false",
+            title: "错误",
           },
         ];
       }

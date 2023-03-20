@@ -18,6 +18,24 @@ export function addHistoryQuestionAPI(data) {
   });
 }
 
+// 将数据库的数据放在redis中
+export function getRandomAPI(params) {
+  return request({
+    url: "/api/v1/quesRen/getRandom",
+    method: "get",
+    params,
+  });
+}
+
+// 将redis中的数据删除
+export function deleteRedisQuestionAPI(params) {
+  return request({
+    url: "api/v1/quesRen/deleteRedisQuestion",
+    method: "post",
+    params,
+  });
+}
+
 // 获取模拟考试题
 export function getQuestionIndexDataAPI(params) {
   return request({

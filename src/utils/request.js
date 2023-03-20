@@ -4,7 +4,7 @@ import "vant/es/toast/style";
 
 const request = axios.create({
   baseURL: process.env.VUE_APP_API,
-  timeout: 5000,
+  timeout: 10000,
 });
 
 // 请求拦截
