@@ -71,3 +71,12 @@ export function addCollectAPI(data) {
     data,
   });
 }
+
+// 提交答卷
+export function addHistoryTestAPI(params) {
+  return request({
+    url: "/api/v1/historyTest/addHistoryTest",
+    method: "post",
+    params,
+  });
+}

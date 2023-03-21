@@ -35,6 +35,9 @@
 
 <script>
 import { ref } from "vue";
+import { addHistoryTestAPI } from "@/api/practiceOrTest";
+import { userStore } from "@/store/userStore";
+import { storeToRefs } from "pinia/dist/pinia";
 
 export default {
   name: "SelectQuestion",
@@ -46,6 +49,9 @@ export default {
   },
   emits: ["changeQuestion"],
   setup(props, { emit }) {
+    // 用户数据
+    const user = userStore();
+    const { userInfo } = storeToRefs(user);
     // 控制面板的开关
     let show = ref(false);
 
@@ -55,11 +61,19 @@ export default {
     };
 
     // 交卷
-    const submit = () => {};
+    const submit = () => {
+      const params = {
+        userId: userInfo.value.userId,
+        userName: userInfo.value.userName,
+        finish: 1,
+      };
+      addHistoryTestAPI(params).then((res) => {
+        console.log(res);
+      });
+    };
 
     // 选择某个题
     const clickQuestion = (item, index) => {
-      console.log("关闭弹窗");
       emit("changeQuestion", item, index);
       // 关闭弹窗
       show.value = false;
