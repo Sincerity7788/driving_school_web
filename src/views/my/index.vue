@@ -39,6 +39,7 @@
 import { userStore } from "@/store/userStore";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
+import { getUserInfoAPI } from "@/api/user";
 
 export default {
   name: "myView",
@@ -48,12 +49,22 @@ export default {
 
     const user = userStore();
     const { userInfo } = storeToRefs(user);
-    console.log(userInfo);
-
     // 跳转登录
     const toLogin = () => {
       router.push("/login");
     };
+
+    // 获取用户信息
+    const getUserInfo = () => {
+      const params = {
+        userId: userInfo.value.userId,
+      };
+      getUserInfoAPI(params).then((res) => {
+        console.log(res);
+        user.login(res.data || {});
+      });
+    };
+    getUserInfo();
 
     return {
       userInfo,

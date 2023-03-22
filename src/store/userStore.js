@@ -18,7 +18,7 @@ export const userStore = defineStore("user", {
       setUserInfo(JSON.stringify(data));
     },
     // 更新用户信息
-    getUserInfo() {
+    updateUserInfo() {
       // 本地获取一下用户信息
     },
   },

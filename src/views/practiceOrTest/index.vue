@@ -67,6 +67,7 @@ import {
   getQuestionAPI,
   getQuestionIndexDataAPI,
   userHasQuestionAPI,
+  getRandomAPI,
 } from "@/api/practiceOrTest";
 import { userStore } from "@/store/userStore";
 import QuestionHead from "./components/Head";
@@ -144,11 +145,6 @@ export default {
 
     // 获取题的信息
     const getQuestionInfo = () => {
-      // 开启加载提示
-      showLoadingToast({
-        message: "加载中...",
-        forbidClick: true,
-      });
       const params = {
         userId: userInfo.value.userId,
         type: queryInfo.type, // 科目1还是科目2
@@ -320,6 +316,24 @@ export default {
       }
     };
 
+    // 从数据库吧数据放到redis中
+    const getRandom = () => {
+      // 开启加载提示
+      showLoadingToast({
+        message: "加载中...",
+        forbidClick: true,
+      });
+      const params = { userId: userInfo.value.userId };
+      getRandomAPI(params)
+        .then(() => {
+          getQuestionInfo();
+        })
+        .catch(() => {
+          // 清除加载中提示
+          closeToast();
+        });
+    };
+
     // 监听组件销毁就删除redis中的数据
     onUnmounted(() => {
       deleteRedisQuestionAPI({ userId: userInfo.value.userId }).then(() => {});
@@ -342,10 +356,11 @@ export default {
       changeQuestion,
       pagingInfo,
       addCollect,
+      getRandom,
     };
   },
   created() {
-    this.getQuestionInfo();
+    this.getRandom();
   },
 };
 </script>

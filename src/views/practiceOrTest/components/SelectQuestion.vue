@@ -31,10 +31,20 @@
       </span>
     </div>
   </van-action-sheet>
+  <van-dialog
+    :show="showConfirm"
+    title="温馨提示"
+    showConfirmButton
+    :showCancelButton="confirmContent.type"
+    @confirm="addHistoryTest"
+  >
+    <div class="SelectQuestion_dialog">{{ confirmContent.content }}</div>
+  </van-dialog>
 </template>
 
 <script>
-import { ref } from "vue";
+import { useRouter } from "vue-router/dist/vue-router";
+import { reactive, ref } from "vue";
 import { addHistoryTestAPI } from "@/api/practiceOrTest";
 import { userStore } from "@/store/userStore";
 import { storeToRefs } from "pinia/dist/pinia";
@@ -52,8 +62,14 @@ export default {
     // 用户数据
     const user = userStore();
     const { userInfo } = storeToRefs(user);
+    const router = useRouter();
     // 控制面板的开关
     let show = ref(false);
+    let showConfirm = ref(false);
+    let confirmContent = reactive({
+      content: "您已经全部答题结束？确认交卷吗？",
+      type: true,
+    });
 
     // 打开选题框
     const openShow = () => {
@@ -62,13 +78,23 @@ export default {
 
     // 交卷
     const submit = () => {
+      // 弹窗二次确认
+      showConfirm.value = true;
+    };
+
+    const addHistoryTest = () => {
+      if (!confirmContent.type) {
+        router.back();
+        return;
+      }
       const params = {
         userId: userInfo.value.userId,
         userName: userInfo.value.userName,
         finish: 1,
       };
       addHistoryTestAPI(params).then((res) => {
-        console.log(res);
+        confirmContent.type = false;
+        confirmContent.content = `您本次考试成绩为：${res.data} 分`;
       });
     };
 
@@ -84,12 +110,18 @@ export default {
       openShow,
       submit,
       clickQuestion,
+      showConfirm,
+      addHistoryTest,
+      confirmContent,
     };
   },
 };
 </script>
 
-<style lang="less" scoped>
+<style lang="less">
+.SelectQuestion_dialog {
+  padding: 30px;
+}
 .selectQuestion_root_select {
   display: flex;
   flex-wrap: wrap;

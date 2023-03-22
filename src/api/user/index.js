@@ -10,7 +10,7 @@ export function registerAPI(data) {
   return request({ url: "/api/v1/user/register", method: "post", data });
 }
 
-// 注册
-export function questionAddAPI(data) {
-  return request({ url: "/api/v1/question/add", method: "post", data });
+// 获取用户信息
+export function getUserInfoAPI(params) {
+  return request({ url: "/api/v1/user/getUserInfo", method: "get", params });
 }

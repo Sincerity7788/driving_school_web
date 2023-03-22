@@ -53,7 +53,6 @@ import { storeToRefs } from "pinia";
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { getQuestionTotalAPI } from "@/api/home";
-import { getRandomAPI } from "@/api/practiceOrTest";
 
 export default {
   name: "HomeView",
@@ -85,12 +84,8 @@ export default {
       if (operationType === 2) {
         current = Math.floor(Math.random() * questionTotal.total);
       }
-      if (operationType === 3) {
+      if (operationType === 3 || operationType === 4) {
         current = 1;
-      }
-      if (operationType === 4) {
-        getRandom();
-        return;
       }
       // 跳转,
       router.push({
@@ -102,18 +97,6 @@ export default {
     let questionPage = 493;
     let isGetQuestion = 0;
     let questionTotal2 = 493;
-
-    // 从数据库吧数据放到redis中
-    const getRandom = () => {
-      const params = { userId: userInfo.value.userId };
-      getRandomAPI(params).then(() => {
-        // 跳转,
-        router.push({
-          path: "/practiceOrTest",
-          query: { operationType: 4, type: active.value, current: 1 },
-        });
-      });
-    };
 
     // 获取题目
     const getQuestionList = () => {
