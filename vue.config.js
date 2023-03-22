@@ -1,8 +1,21 @@
 const { defineConfig } = require("@vue/cli-service");
 const { VantResolver } = require("unplugin-vue-components/resolvers");
 const ComponentsPlugin = require("unplugin-vue-components/webpack");
+const path = require("path");
 
 module.exports = defineConfig(() => ({
+  pages: {
+    index: {
+      // page 的入口
+      entry: path.join(__dirname, "./src/main.js"),
+      // 模板来源
+      template: path.join(__dirname, "./public/index.html"),
+      // 在 dist/index.html 的输出
+      filename: "index.html",
+      title: "cc驾考练习",
+      chunks: ["chunk-vendors", "chunk-common", "index"],
+    },
+  },
   publicPath: "./",
   transpileDependencies: true,
   configureWebpack: {
