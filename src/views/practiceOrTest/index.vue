@@ -225,6 +225,7 @@ export default {
         userId: userInfo.value.userId,
         id: questionInfo.id,
         questionId: questionInfo.questionId,
+        questionTitle: questionInfo.title,
         answer: selectRef.value.getAnswer().value,
         type: queryInfo.type,
       };

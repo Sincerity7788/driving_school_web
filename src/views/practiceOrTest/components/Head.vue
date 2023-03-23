@@ -4,15 +4,7 @@
       <span>{{ `${pageNum} / ${question.total || 0}` }}</span>
       <span v-if="queryInfo.operationType === '4'">{{ time }}</span>
       <div>
-        <van-tag type="primary" v-show="question.titleType === '1'">
-          单选题
-        </van-tag>
-        <van-tag type="success" v-show="question.titleType === '3'">
-          多选题
-        </van-tag>
-        <van-tag type="danger" v-show="question.titleType === '2'">
-          判断题
-        </van-tag>
+        <QuestionTag :titleType="question.titleType" />
       </div>
     </div>
     <div class="head_root_question_info">
@@ -26,6 +18,7 @@
 
 <script>
 import { ref, onUnmounted } from "vue";
+import QuestionTag from "@/components/QuestionTag";
 
 export default {
   name: "HeadView",
@@ -42,6 +35,9 @@ export default {
       type: Number,
       default: 1,
     },
+  },
+  components: {
+    QuestionTag,
   },
   setup(props) {
     const time = ref("45:00");
